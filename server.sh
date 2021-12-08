@@ -1,0 +1,15 @@
+nohup python3 scripts/dialog.py data/sample/bin/ \
+ --path /home/ubuntu/hobbyst/checkpoints/persona50k-flat_1.6B_33avog1i_4.16.pt \
+ --beam 30 \
+ --min-len 10 \
+ --source-lang src \
+ --target-lang dst \
+ --tokenizer space \
+ --bpe sentencepiece \
+ --sentencepiece-model /home/ubuntu/hobbyst/sentencepiece_models/sp_oall_32k.model \
+ --no-repeat-ngram-size 3 \
+ --nbest 30 \
+ --sampling \
+ --sampling-topp 0.9 \
+ --temperature 1.0 \
+ --show-nbest 5 > out3.log 2> error3.log &

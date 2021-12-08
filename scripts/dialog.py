@@ -16,6 +16,7 @@ import math
 import re
 import difflib
 import collections
+import json
 
 import numpy as np
 import copy
@@ -29,6 +30,8 @@ from fairseq_cli.generate import get_symbols_to_strip_from_output
 
 from fairseq.dataclass.configs import FairseqConfig
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import parse_qs, urlparse
 
 SEPARATOR = "[SEP]"
 SPK1 = "[SPK1]"
@@ -317,9 +320,7 @@ class Favot(object):
             return "", ret_debug
         ret_utt, ret_score = ret_scores.most_common(1)[0]
         print(ret_score, ret_utt)
-        if mode == "prefinish":
-            ret_utt = ret_utt + "\nあ、すみません。そろそろ時間ですね。今日はありがとうございました。"
-        self.add_contexts(SPK1, ret_utt)
+
         self.logger.info(str(ret_scores.most_common(5)))
         return ret_utt, ret_debug
 
@@ -327,47 +328,6 @@ class Favot(object):
         mode = "normal"
         if "mode" in kwargs:
             mode = kwargs["mode"]
-        if uttr.startswith("/help"):
-            self.logger.info(str(self.args))
-            return collections.Counter(), [str(self.args)]
-        if uttr.startswith("/debug"):
-            if uttr == "/debug off" or uttr == "/debug False" or uttr == "/debug false":
-                self.debug = False
-            else:
-                self.debug = True
-            return
-
-        if uttr.startswith("/sys "):
-            toks = uttr.split(" ")
-            key = toks[1]
-            val = toks[2]
-            args = {key: val}
-            self.set_generator_parameters(args)
-            return
-
-        if uttr.startswith("/cancel"):
-            self.contexts = self.contexts[:-2]
-            self.sent_contexts = []
-            for cdic in self.contexts:
-                c = cdic["utt"]
-                #for s in self.sent_splitter.findall(c):
-                for s in self.sent_split(c):
-                    self.sent_contexts.append({"spk": cdic["spk"], "utt": s})
-            return
-
-        if uttr == "||init||":
-            start_utt = self.args.starting_phrase
-            #start_utt = 'こんにちは。よろしくお願いします。'
-            # self.logger.info("sys_persona: " + self.make_input_func("", ""))
-            # #self.logger.info("sys_persona: "+self.make_input(""))
-
-            #print("sys: " + start_utt)
-            #start_utt = '何か趣味はありますか？'
-            #self.add_contexts(SPK1, start_utt, mode=mode)
-            ret_scores = collections.Counter()
-            ret_scores[start_utt] = 0.0
-            #return start_utt, ""
-            return ret_scores, ""
 
         ret_debug = []
         start_time = time.time()
@@ -376,16 +336,6 @@ class Favot(object):
         inputs = [
             self.make_input_func(SPK2, uttr, mode=mode),
         ]
-        self.add_contexts(SPK2, uttr, mode=mode)
-
-        if uttr.startswith("/input "):
-            if "終了処理" in uttr:
-                mode = "finish"
-            _input = uttr[7:]
-            inputs = [
-                _input,
-            ]
-        #_input.replace("ID01","ID47"),
 
         self.logger.info("input_seq: " + str(inputs))
         if self.debug:
@@ -653,33 +603,158 @@ class Favot(object):
             max_contexts = self.args.max_contexts
         line = ""
 
-        contexts = self.contexts
-        _lines = []
-        lastspk = ""
-        for c in contexts[-self.args.max_contexts:]:
-            spk = c["spk"]
-            lastspk = spk
-            utt = c["utt"]
-            _line = spk + utt + SEPARATOR
-            #lc += len(_line)
-            _lines.append(_line)
-        __line = ""
-        for _line in _lines[::-1]:
-            if len(__line) + len(_line) > 512 - len(newutt):
-                break
-            __line = _line + __line
-
-        line = line + __line
-        line += newspk + newutt + SEPARATOR
-        line = line[:-len(SEPARATOR)]
-
-        return line
+        contexts = newutt
+        print(contexts, flush=True)
+        SP = {"U": SPK2, "S": SPK1, "s":SPK1, "u":SPK2}
+        line = [SP[_context["Talker"][0]] + _context["Uttr"] for _context in contexts["data"]]
+        print(line, flush=True)
+        return SEPARATOR.join(line)[-512:]
 
     def reset(self):
         self.contexts = []
         self.sent_contexts = []
         return
 
+
+STYLE_SHEET = "https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.css"
+FONT_AWESOME = "https://use.fontawesome.com/releases/v5.3.1/js/all.js"
+WEB_HTML = """
+<html>
+    <link rel="stylesheet" href={} />
+    <script defer src={}></script>
+    <head><title> Interactive Run </title></head>
+    <body>
+        <div class="columns" style="height: 100%">
+            <div class="column is-three-fifths is-offset-one-fifth">
+              <section class="hero is-info is-large has-background-light has-text-grey-dark" style="height: 100%">
+                <div id="parent" class="hero-body" style="overflow: auto; height: calc(100% - 76px); padding-top: 1em; padding-bottom: 0;">
+                    <article class="media">
+                      <div class="media-content">
+                        <div class="content">
+                          <p>
+                            <strong>Instructions</strong>
+                            <br>
+                            Enter a message, and the model will respond interactively. <br>
+                            日本語で入力してもらっても大丈夫です．<br>
+                            会話をやり直す場合はブラウザを更新してください．<br>
+                            会話を入力してから，若干ラグがありますが，基本的には大丈夫です．ただ，5秒以上たっても返信がない場合は horiso0921@gmail.com まで連絡ください<br>
+                        </p>
+                        </div>
+                      </div>
+                    </article>
+                </div>
+                <div class="hero-foot column is-three-fifths is-offset-one-fifth" style="height: 76px">
+                  <form id = "interact">
+                      <div class="field is-grouped">
+                        <p class="control is-expanded">
+                          <input class="input" type="text" id="userIn" placeholder="Type in a message">
+                        </p>
+                        <p class="control">
+                          <button id="respond" type="submit" class="button has-text-white-ter has-background-grey-dark">
+                            Submit
+                          </button>
+                        </p>
+                      </div>
+                  </form>
+                </div>
+              </section>
+            </div>
+        </div>
+        <script>
+            function createChatRow(agent, text) {{
+                var article = document.createElement("article");
+                article.className = "media"
+                var figure = document.createElement("figure");
+                figure.className = "media-left";
+                var span = document.createElement("span");
+                span.className = "icon is-large";
+                var icon = document.createElement("i");
+                icon.className = "fas fas fa-2x" + (agent === "You" ? " fa-user " : agent === "Model" ? " fa-robot" : "");
+                var media = document.createElement("div");
+                media.className = "media-content";
+                var content = document.createElement("div");
+                content.className = "content";
+
+                var para2 = document.createElement("p");
+                var paraText = document.createTextNode(text);
+                para2.className = "utt";
+
+                var para1 = document.createElement("p");
+                var strong = document.createElement("strong");
+                strong.innerHTML = agent;
+                var br = document.createElement("br");
+
+                para1.appendChild(strong);
+                para2.appendChild(paraText);
+                content.appendChild(para1);
+                content.appendChild(para2);
+                media.appendChild(content);
+
+                span.appendChild(icon);
+                figure.appendChild(span);
+
+                if (agent !== "Instructions") {{
+                    article.appendChild(figure);
+                }};
+                article.appendChild(media);
+                return article;
+            }}
+            var parDiv = document.getElementById("parent");
+            parDiv.append(createChatRow("Model", "こんにちは。よろしくお願いします。"));
+            parDiv.scrollTo(0, parDiv.scrollHeight);
+            var context = [
+                {{"Talker": "S",
+                 "Uttr":   "こんにちは。よろしくお願いします。"
+                }}];
+            document.getElementById("interact").addEventListener("submit", function(event){{
+                event.preventDefault()
+
+                ntex = document.getElementById("userIn").value;
+                var ncontext = {{"Talker": "U",
+                 "Uttr":   ntex
+                }};
+                context.push(ncontext);
+
+                document.getElementById('userIn').value = "";
+                var parDiv = document.getElementById("parent");
+                parDiv.append(createChatRow("You", ntex));
+                parDiv.scrollTo(0, parDiv.scrollHeight);
+                var send_info = {{"data": context}};
+                fetch('/interact', {{
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    method: 'POST',
+                    body: JSON.stringify(send_info)
+                }}).then(response=>response.json()).then(data=>{{
+                    // Change info for Model response
+                    parDiv.append(createChatRow("Model", data.text));
+                    parDiv.scrollTo(0, parDiv.scrollHeight);
+                    context.push({{"Talker": "S", "Uttr": data.text}});
+                }})
+            }});
+            document.getElementById("interact").addEventListener("reset", function(event){{
+                event.preventDefault()
+                var text = document.getElementById("userIn").value;
+                document.getElementById('userIn').value = "";
+                fetch('/reset', {{
+                    headers: {{
+                        'Content-Type': 'application/json'
+                    }},
+                    method: 'POST',
+                }}).then(response=>response.json()).then(data=>{{
+                    var parDiv = document.getElementById("parent");
+                    parDiv.innerHTML = '';
+                    parDiv.append(createChatRow("Instructions", "Enter a message, and the model will respond interactively."));
+                    parDiv.scrollTo(0, parDiv.scrollHeight);
+                }})
+            }});
+        </script>
+    </body>
+</html>
+"""  # noqa: E501
+
+        
 
 def add_local_args(parser):
     parser.add_argument('--max-contexts', type=int, default=4, help='max length of used contexts')
@@ -690,24 +765,84 @@ def add_local_args(parser):
 
 
 def test(logger, parser, args, cfg):
-    #distributed_utils.call_main(args, main)
+
     fm = FavotModel(args, logger=logger)
     favot = Favot(args, fm, logger=logger, parser=parser)
-    print(favot.execute("||init||"))
-    while True:
-        line = input(">>")
-        # if line.startswith("/"):
-        if line.startswith("/reset"):
-            favot.reset()
-            continue
-        ret = favot.execute(line.rstrip("\n"))
-        if ret is None or len(ret) != 2:
-            continue
-        ret, ret_debug = ret
-        if ret is not None:
-            logger.info("sys_uttr: " + ret)
-            print("\n".join(ret_debug))
-            print("sys: " + ret)
+
+    class MyHTTPRequestHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            paths = {
+            '/': {'status': 200},
+            '/favicon.ico': {'status': 202},  # Need for chrome
+            }
+            if not self.path in paths:
+                response = 500
+                self.send_response(response)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                content = WEB_HTML.format(STYLE_SHEET, FONT_AWESOME)
+                self.wfile.write(bytes(content, 'UTF-8'))
+            else:
+                response = paths[self.path]['status']
+                print('path = {}'.format(self.path))
+
+                parsed_path = urlparse(self.path)
+                print('parsed: path = {}, query = {}'.format(parsed_path.path, parse_qs(parsed_path.query)))
+
+                print('headers\r\n-----\r\n{}-----'.format(self.headers))
+
+                self.send_response(response)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                content = WEB_HTML.format(STYLE_SHEET, FONT_AWESOME)
+                self.wfile.write(bytes(content, 'UTF-8'))
+
+        
+
+        def do_POST(self):
+            """
+            Handle POST request, especially replying to a chat message.
+            """
+            print('path = {}'.format(self.path))
+            parsed_path = urlparse(self.path)
+            print('parsed: path = {}, query = {}'.format(parsed_path.path, parse_qs(parsed_path.query)))
+
+            print('headers\r\n-----\r\n{}-----'.format(self.headers))
+
+            if self.path == '/interact':
+                content_length = int(self.headers['content-length'])
+                try:
+                    content = self.rfile.read(content_length).decode('utf-8')
+                    print('body = {}'.format(content))
+                    print(content_length)
+                    # print('body = {}'.format(self.rfile.read(content_length).decode('utf-8')))
+                    body = json.loads(content)
+
+                    print('body = {}'.format(body))
+
+                    ret = favot.execute(body)
+                    ret, ret_debug = ret
+                    if ret is not None:
+                        logger.info("sys_uttr: " + ret)
+                        print("\n".join(ret_debug))
+                        print("sys: " + ret)
+                    model_response = {"text": ret}
+                except Exception as e:
+                    print("error", e, flush=True)
+                    model_response = {"text": f"server error!!! 入力形式に誤りがあります。error Message: {e}"}
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                json_str = json.dumps(model_response)
+                self.wfile.write(bytes(json_str, 'utf-8'))
+
+    print("Start", flush=True)
+    address = ('localhost', 8080)
+
+    MyHTTPRequestHandler.protocol_version = 'HTTP/1.0'
+    with HTTPServer(address, MyHTTPRequestHandler) as server:
+        server.serve_forever()
 
 
 def main():

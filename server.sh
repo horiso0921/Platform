@@ -1,6 +1,6 @@
 CUDA_LAUNCH_BLOCKING=1
 nohup python3 scripts/dialog.py data/sample/bin/ \
- --path /home/ubuntu/Platform/data/model/checkpoint_best.pt \
+ --path /home/ubuntu/Platform/data/model/empdial50k-flat_1.6B_19jce27w_3.86.pt \
  --beam 30 \
  --min-len 10 \
  --source-lang src \

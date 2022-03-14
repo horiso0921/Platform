@@ -28,6 +28,26 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 from page import *
 
+def add_local_args(parser):
+    parser.add_argument('--max-contexts', type=int, default=4,
+                        help='max length of used contexts')
+    parser.add_argument('--suppress-duplicate', action="store_true",
+                        default=False, help='suppress duplicate sentences')
+    parser.add_argument('--show-nbest', default=3,
+                        type=int, help='# visible candidates')
+    parser.add_argument(
+        '--starting-phrase', default="こんにちは。よろしくお願いします。", type=str, help='starting phrase')
+    parser.add_argument('--quemode', default="off",
+                        type=str, help='question mode')
+    parser.add_argument('--que', default="あなたの宗教は何ですか？",
+                        type=str, help='question mode')
+    parser.add_argument('--turn', default=9, type=int, help='question mode')
+    parser.add_argument('--savepath', default="log", type=str, help='question mode')
+    parser.add_argument('--basepath', default="/data/group1/z44384r/finetuning-nttdialoguemodel/model/base/empdial50k-flat_1.6B_19jce27w_3.86.pt", type=str, help='base model path')
+    parser.add_argument('--saya', default=False, type=bool, help='Is saya model')
+    parser.add_argument('--train-turn', default=5, type=int, help='学習時のターン数')
+    return parser
+
 class FavotModel(object):
 
     def __init__(self, args, *, logger=None):

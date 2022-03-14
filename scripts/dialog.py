@@ -36,8 +36,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 from page import *
  
-from model_init import FavotModel
-from model import Favot, add_local_args
+from model_init import FavotModel,  add_local_args
+from model import Favot
+
+QUESTION_PATH = "/home/ubuntu/Platform/data/que/que.txt"
 
 def set_logger(name, rootname="log/main.log"):
     dt_now = datetime.now()
@@ -59,7 +61,11 @@ def test(logger, parser, args, cfg):
     fm = FavotModel(args, logger=logger)
     favot = Favot(args, fm, logger=logger, parser=parser)
     question_d = defaultdict(lambda: "")
-    quesiton_l = ["結婚生活は楽しいですか?"]
+    quesiton_l = []
+    with open(QUESTION_PATH, "r") as f:
+        for line in f:
+            line = line.rstrip()
+            quesiton_l.append(line)
 
     class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -72,7 +78,7 @@ def test(logger, parser, args, cfg):
                 self.send_response(response)
                 self.send_header('Content-Type', 'text/html; charset=utf-8')
                 self.end_headers()
-                content = WEB_HTML.format(STYLE_SHEET, FONT_AWESOME)
+                content = WEB_HTML.format(STYLE_SHEET, CSS, FONT_AWESOME, JS)
                 self.wfile.write(bytes(content, 'UTF-8'))
             else:
                 response = paths[self.path]['status']
@@ -155,16 +161,19 @@ def test(logger, parser, args, cfg):
 
                     ret = favot.execute(body)
                     ret, ret_debug = ret
-                    ret_ = [ret.most_common(10)[i][0] for i in range(1)]
+                   
+                    if body["count"] == 1 and body["question"][:-1] not in ret:
+                        ret = body["question"]
+
                     if ret is not None:
-                        logger.info("sys_uttr: " + ret_[0])
+                        logger.info("sys_uttr: " + ret)
                         print("\n".join(ret_debug))
-                        print("sys: " + ret_[0])
+                        print("sys: " + ret)
                     print(ret, flush=True)
-                    model_response = {"text": ret_[0]}
+                    model_response = {"text": ret}
                 except Exception as e:
                     print("error", e, flush=True)
-                    model_response = {"text": f"server error!!! 入力形式に誤りがあります。error Message: {e}"}
+                    model_response = {"text": f"server error!!! クラウドワークスにて連絡をお願いします。"}
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')

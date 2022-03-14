@@ -468,21 +468,36 @@ class Favot(object):
         return
 
     def make_input(self, newspk, newutt, mode="normal", max_contexts=-1, id=None, idprefix="a"):
-        print("make_input")
         if max_contexts == -1:
             max_contexts = self.args.max_contexts
         line = ""
 
         contexts = newutt
         print(contexts, flush=True)
-        SP = {"U": SPK2, "S": SPK1, "s":SPK1, "u":SPK2}
-        line = [SP[_context["Talker"][0]] + _context["Uttr"] for _context in contexts['data'][-4:]]
-        print(line, flush=True)
-        if contexts["count"]  == 1:
-            self.question_time = True
+        SP = {"U": SPK2, "S": SPK1, "u": SPK2, "s": SPK1}
+        contexts = newutt["data"]
+        turn = newutt["count"]
+        que = newutt["question"]
+
+        line = [SP[_context["Talker"]] +_context["Uttr"]
+            for _context in contexts]
+
+        res = SEPARATOR.join(line[-4:])
+        self.question_time = False
+        
+        if TRAIN_TURN >= turn > 0:
+            q = f"質問誘導[SEP]残ターン: {turn}[SEP]質問: {que}[SEP]"
+            if turn == 1:
+                self.question_time = True
+
         else:
-            self.question_time = False
-        return SEPARATOR.join(line)[-512:]
+            q = f"雑談[SEP]"
+            
+        res = q + res[-512:]
+
+        print(res, flush=True)
+        return res
+
 
     def reset(self):
         self.contexts = []

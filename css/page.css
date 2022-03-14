@@ -1,0 +1,107 @@
+.media-content-left {
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+    text-align: left;
+}
+
+.media-content-right {
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+    text-align: right;
+}
+
+.balloon1-left {
+    position: relative;
+    display: inline-block;
+    margin: 0.3em 0 0.3em 15px;
+    padding: 7px 10px;
+    min-width: 120px;
+    max-width: 100%;
+    color: #555;
+    font-size: 16px;
+    background: lightgray;
+    border-radius: 5px 5px 5px 5px;
+}
+
+.balloon1-left:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -30px;
+    margin-top: -15px;
+    border: 15px solid transparent;
+    border-right: 15px solid lightgray;
+}
+
+.balloon1-left p {
+    margin: 0;
+    padding: 0;
+}
+
+.balloon1-right {
+    position: relative;
+    display: inline-block;
+    margin: 0.3em 15px 0.3em 0;
+    padding: 7px 10px;
+    min-width: 120px;
+    max-width: 100%;
+    color: #555;
+    font-size: 16px;
+    background: rgba(144, 238, 144, 0.7);
+    border-radius: 5px 5px 5px 5px;
+}
+
+.balloon1-right:before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    margin-top: -15px;
+    border: 15px solid transparent;
+    border-left: 15px solid rgba(144, 238, 144, 0.7);
+}
+
+.balloon1-right p {
+    margin: 0;
+    padding: 0;
+}
+
+.balloon1 {
+    position: relative;
+    display: inline-block;
+    margin: 0.3em 15px 0.3em 0;
+    padding: 7px 10px;
+    min-width: 120px;
+    max-width: 100%;
+    color: rgb(0, 0, 0);
+    font-size: 16px;
+    background: rgb(253, 143, 47);
+    border-radius: 5px 5px 5px 5px;
+}
+
+.balloon1 p {
+    margin: 0;
+    padding: 0;
+}
+
+.media {
+    align-items: flex-end;
+}
+
+#evaluation {
+    margin-top: 5px;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+    vertical-align: middle;
+}
+
+label {
+    display: block;
+    /* ブロックを作るように */
+    margin: 5px 0;
+    /* 前後のスペース */
+}

@@ -13,6 +13,7 @@ function isEvaluationDone() {
                 }
             }
             if (tmp == 0) {
+                window.alert("5つすべての項目における評価をお願いします");
                 return false;
             }
         }
@@ -20,7 +21,7 @@ function isEvaluationDone() {
     return true;
 }
 
-function createEvalRow(name) {
+function createEvalRow(name, content) {
     var article = document.createElement("article");
     article.className = "media"
 
@@ -29,21 +30,21 @@ function createEvalRow(name) {
 
     var evalMessagePara = document.createElement("p");
     var evalMessage = document.createElement("strong");
-    evalMessage.innerHTML = "前の文脈に照らして上の発話は自然だと思いますか？"
+    evalMessage.innerHTML = content;
 
     evalMessagePara.appendChild(evalMessage);
     eval.appendChild(evalMessagePara);
 
-    EvalList = ["そう思わない", "ややそう思わない", "どちらでもない", "ややそう思う", "そう思う"];
+    evalList = ["そう思わない", "ややそう思わない", "どちらでもない", "ややそう思う", "そう思う"];
 
     for (let i = 1; i < 6; i++) {
         const input_ = document.createElement("input");
         input_.type = "radio";
         input_.name = name;
         input_.id = "r" + i + name;
-        input_.value = EvalList[i - 1];
+        input_.value = evalList[i - 1];
 
-        const text = document.createTextNode("  " + i + ". " + EvalList[i - 1]);
+        const text = document.createTextNode("  " + i + ". " + evalList[i - 1]);
         const Label = document.createElement("label");
         Label.htmlFor = input_.id;
         Label.appendChild(input_);
@@ -51,16 +52,20 @@ function createEvalRow(name) {
 
         eval.appendChild(Label);
     }
-    eval.style = "display:none";
+    eval.style = "display:block";
     article.appendChild(eval);
     return article;
 }
 
 function apperAllFrom() {
-    for (let i = 0; i <= turn; i++) {
-        var form = document.getElementById("evaluation" + i);
-        if (form != null) {
-            form.style = "display:block";
+    contentList = ["システムの発話は自然でしたか？", "システムの発話は情報量がありましたか？", "システムの発話は友好的でしたか？", "システムは質問を適切なタイミングで行っていましたか？", "システムは質問に対する回答を適切に行っていましたか？"];
+    for (let i = 0; i < contentList.length; i++) {
+        var parDiv = document.getElementById("parent");
+        var j = i + 1;
+        parDiv.append(createEvalRow(i, j + " : "+ contentList[i]));
+        console.log(i);
+        if(i == 1){
+            parDiv.scrollTo(0, parDiv.scrollHeight-2);
         }
     }
 }
@@ -69,13 +74,15 @@ function createChatRow(agent, text) {
     var article = document.createElement("article");
     article.className = "media"
     var figure = document.createElement("figure");
-    figure.className = "media" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "-left" : "");
     var span = document.createElement("span");
-    span.className = "icon is-large";
     var icon = document.createElement("i");
-    icon.className = "fas fas fa-2x" + (agent === "You" ? " fa-user " : agent === "Model" ? " fa-robot" : agent === "System" ? " fa-robot" : "");
+    if (agent != "System") {
+        figure.className = "media" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "-center" : "");
+        span.className = "icon is-large";
+        icon.className = "fas fas fa-2x" + (agent === "You" ? " fa-user " : agent === "Model" ? " fa-robot" : agent === "System" ? " fa-info-circle" : "");
+    }
     var media = document.createElement("div");
-    media.className = "media-content" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "" : "");
+        media.className = "media-content" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "-center" : "");
     var content = document.createElement("div");
     content.className = "content";
 
@@ -99,8 +106,10 @@ function createChatRow(agent, text) {
         figure.appendChild(span);
         article.appendChild(figure);
     } else {
-        span.appendChild(icon);
-        figure.appendChild(span);
+        if (agent != "System") {
+            span.appendChild(icon);
+            figure.appendChild(span);
+        }
         if (agent !== "Instructions") {
             article.appendChild(figure);
         };
@@ -110,11 +119,8 @@ function createChatRow(agent, text) {
     return article;
 }
 
-var context = [{
-    "Talker": "S",
-    "Uttr": "こんにちは。よろしくお願いします。"
-}];
-var pahse = 0
+var context = [];
+var phase = 0
 
 function exportCSV() {
     var csvData = "";
@@ -146,14 +152,13 @@ function exportCSV() {
 }
 
 var parDiv = document.getElementById("parent");
-parDiv.append(createChatRow("Model", "本日はどうぞよろしくお願いします。"));
+parDiv.append(createChatRow("System", "あなたが挨拶を入力すると対話がスタートします"));
 parDiv.scrollTo(0, parDiv.scrollHeight);
 
-
-document.getElementById("interact").addEventListener("submit", function(event) {
+document.getElementById("interact").addEventListener("submit", function (event) {
     event.preventDefault()
 
-    if (pahse == 0) {
+    if (phase == 0) {
         ntex = document.getElementById("userIn").value;
         var ncontext = {
             "Talker": "U",
@@ -168,7 +173,7 @@ document.getElementById("interact").addEventListener("submit", function(event) {
         turn += 1;
         var send_info = { "data": context, "ID": ID, "count": 11 - turn };
         document.getElementById("interact").style.display = "none";
-        fetch('/interact_one_res', {
+        fetch('/interact', {
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -177,14 +182,13 @@ document.getElementById("interact").addEventListener("submit", function(event) {
         }).then(response => response.json()).then(data => {
             // Change info for Model response
             parDiv.append(createChatRow("Model", data.text));
-            parDiv.append(createEvalRow(turn));
             parDiv.scrollTo(0, parDiv.scrollHeight);
             document.getElementById("interact").style.display = "block";
             context.push({ "Talker": "S", "Uttr": data.text });
             turn += 1;
             if (turn >= 15) {
-                pahse = 1;
-                parDiv.append(createChatRow("System", "これにて対話は終了です。下の「評価開始」ボタンを押すと上に発話の評価欄が現れますので，各発話の評価を行ってください。"));
+                phase = 1;
+                parDiv.append(createChatRow("System", "これにて対話は終了です。下の「評価開始」ボタンを押すと対話の評価ができます。"));
                 document.getElementById("respond").textContent = "評価開始";
                 document.getElementById("userIn").remove();
                 parDiv.scrollTo(0, parDiv.scrollHeight);
@@ -194,21 +198,21 @@ document.getElementById("interact").addEventListener("submit", function(event) {
 });
 
 
-document.getElementById("interact").addEventListener("submit", function(event) {
+document.getElementById("interact").addEventListener("submit", function (event) {
     event.preventDefault();
-    if (pahse == 1) {
-        pahse = 2;
+    if (phase == 1) {
+        phase = 2;
         apperAllFrom();
         console.log("EVAL");
         var parDiv = document.getElementById("parent");
-        parDiv.append(createChatRow("System", "システム発話の評価を行ってください。評価が終わりましたら下の「評価の終了」ボタンを押して対話のダウンロードを行ってください。"));
-        document.getElementById("respond").textContent = "評価終了";
+        parDiv.append(createChatRow("System", "評価が終わりましたら下の「評価の終了」ボタンを押してダウンロードを行ってください。"));
+        document.getElementById("respond").textContent = "評価の終了";
     }
 });
 
 document.getElementById("interact").addEventListener("submit", function(event) {
     event.preventDefault();
-    if (pahse == 2) {
+    if (phase == 2) {
         if (isEvaluationDone()) {
             exportCSV();
         }

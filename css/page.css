@@ -5,6 +5,13 @@
     text-align: left;
 }
 
+.media-content-center {
+    flex-basis: auto;
+    flex-grow: 1;
+    flex-shrink: 1;
+    text-align: center;
+}
+
 .media-content-right {
     flex-basis: auto;
     flex-grow: 1;
@@ -68,10 +75,11 @@
     padding: 0;
 }
 
+
 .balloon1 {
     position: relative;
     display: inline-block;
-    margin: 0.3em 15px 0.3em 0;
+    margin: 0.3em 0 0.3em 0;
     padding: 7px 10px;
     min-width: 120px;
     max-width: 100%;
@@ -101,7 +109,5 @@ input[type="checkbox"] {
 
 label {
     display: block;
-    /* ブロックを作るように */
     margin: 5px 0;
-    /* 前後のスペース */
 }

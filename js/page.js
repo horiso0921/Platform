@@ -62,11 +62,8 @@ function apperAllFrom() {
     for (let i = 0; i < contentList.length; i++) {
         var parDiv = document.getElementById("parent");
         var j = i + 1;
-        parDiv.append(createEvalRow(i, j + " : "+ contentList[i]));
+        parDiv.append(createEvalRow(i, j + " : " + contentList[i]));
         console.log(i);
-        if(i == 1){
-            parDiv.scrollTo(0, parDiv.scrollHeight-2);
-        }
     }
 }
 
@@ -82,7 +79,7 @@ function createChatRow(agent, text) {
         icon.className = "fas fas fa-2x" + (agent === "You" ? " fa-user " : agent === "Model" ? " fa-robot" : agent === "System" ? " fa-info-circle" : "");
     }
     var media = document.createElement("div");
-        media.className = "media-content" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "-center" : "");
+    media.className = "media-content" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : agent === "System" ? "-center" : "");
     var content = document.createElement("div");
     content.className = "content";
 
@@ -188,7 +185,9 @@ document.getElementById("interact").addEventListener("submit", function (event) 
             turn += 1;
             if (turn >= 15) {
                 phase = 1;
-                parDiv.append(createChatRow("System", "これにて対話は終了です。下の「評価開始」ボタンを押すと対話の評価ができます。"));
+                var end_phrase = "これにて対話は終了です。対話IDは " + ID + " です。"
+                parDiv.append(createChatRow("System", end_phrase));
+                parDiv.append(createChatRow("System", "下の「評価開始」ボタンを押すと，対話の評価欄が出現します。"));
                 document.getElementById("respond").textContent = "評価開始";
                 document.getElementById("userIn").remove();
                 parDiv.scrollTo(0, parDiv.scrollHeight);
@@ -205,12 +204,16 @@ document.getElementById("interact").addEventListener("submit", function (event) 
         apperAllFrom();
         console.log("EVAL");
         var parDiv = document.getElementById("parent");
-        parDiv.append(createChatRow("System", "評価が終わりましたら下の「評価の終了」ボタンを押してダウンロードを行ってください。"));
+        parDiv.append(createChatRow("System", "評価が終わりましたら下の「評価の終了」ボタンを押して，やり取りのダウンロードを行ってください。"));
         document.getElementById("respond").textContent = "評価の終了";
+        parDiv.scrollTo({
+            top: parDiv.scrollHeight,
+            behavior: 'smooth'
+        });
     }
 });
 
-document.getElementById("interact").addEventListener("submit", function(event) {
+document.getElementById("interact").addEventListener("submit", function (event) {
     event.preventDefault();
     if (phase == 2) {
         if (isEvaluationDone()) {

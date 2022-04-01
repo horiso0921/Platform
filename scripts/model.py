@@ -30,7 +30,6 @@ from fairseq.data import encoders
 from fairseq.token_generation_constraints import pack_constraints, unpack_constraints
 from fairseq_cli.generate import get_symbols_to_strip_from_output
 
-from fairseq.dataclass.configs import FairseqConfig
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 
 SEPARATOR = "[SEP]"

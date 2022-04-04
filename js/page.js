@@ -58,7 +58,7 @@ function createEvalRow(name, content) {
 }
 
 function apperAllFrom() {
-    contentList = ["システムの発話は自然でしたか？", "システムの発話は情報量がありましたか？", "システムの発話は友好的でしたか？", "システムは質問を適切なタイミングで行っていましたか？", "システムは質問に対する回答を適切に行っていましたか？"];
+    contentList = ["システムの発話は自然だった", "システムの発話は情報量があった", "システムの発話は親近感があった", "システムは質問を適切なタイミングで行っていた", "システムはあなたの質問に対する回答を適切に行っていた"];
     for (let i = 0; i < contentList.length; i++) {
         var parDiv = document.getElementById("parent");
         var j = i + 1;
@@ -88,7 +88,7 @@ function createChatRow(agent, text) {
     para2.className = "balloon1" + (agent === "You" ? "-right" : agent === "Model" ? "-left" : "")
     var para1 = document.createElement("p");
     var strong = document.createElement("strong");
-    strong.innerHTML = (agent === "You" ? "あなた" : agent === "Model" ? "システム" : agent === "System" ? " システムアナウンス" : agent);
+    strong.innerHTML = (agent === "You" ? "あなた" : agent === "Model" ? "システム" : agent === "System" ? "" : agent);
     var br = document.createElement("br");
 
     para1.appendChild(strong);
@@ -185,9 +185,7 @@ document.getElementById("interact").addEventListener("submit", function (event) 
             turn += 1;
             if (turn >= 15) {
                 phase = 1;
-                var end_phrase = "これにて対話は終了です。対話IDは " + ID + " です。"
-                parDiv.append(createChatRow("System", end_phrase));
-                parDiv.append(createChatRow("System", "下の「評価開始」ボタンを押すと，対話の評価欄が出現します。"));
+                parDiv.append(createChatRow("System", "これにて対話は終了です。下の「評価開始」ボタンを押して、対話の評価を行ってください。"));
                 document.getElementById("respond").textContent = "評価開始";
                 document.getElementById("userIn").remove();
                 parDiv.scrollTo(0, parDiv.scrollHeight);
@@ -204,7 +202,7 @@ document.getElementById("interact").addEventListener("submit", function (event) 
         apperAllFrom();
         console.log("EVAL");
         var parDiv = document.getElementById("parent");
-        parDiv.append(createChatRow("System", "評価が終わりましたら下の「評価の終了」ボタンを押して，やり取りのダウンロードを行ってください。"));
+        parDiv.append(createChatRow("System", "評価が終わりましたら，下の「評価の終了」ボタンを押して，対話履歴及び評価値のダウンロードを行ってください。"));
         document.getElementById("respond").textContent = "評価の終了";
         parDiv.scrollTo({
             top: parDiv.scrollHeight,

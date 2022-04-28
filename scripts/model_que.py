@@ -485,8 +485,8 @@ class Favot(object):
         res = SEPARATOR.join(line[-4:])
         self.question_time = False
         
-        if TRAIN_TURN >= turn > 0:
-            q = f"質問誘導[SEP]残ターン: {turn}[SEP]質問: {que}[SEP]"
+        if 5 >= turn > 0:
+            q = f"質問誘導: [SEP]残ターン: {turn}[SEP]対象: {que}[SEP]"
             if turn == 1:
                 self.question_time = True
 

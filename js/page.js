@@ -1,6 +1,8 @@
 var ID = Math.floor(Math.random() * (9999999999 - 1000000000)) + 1000000000;
 var outfile = ID + ".csv"
 var turn = 1;
+var param = location.search;
+var id = decodeURI(param.split('=')[1])
 
 function isEvaluationDone() {
     for (let i = 0; i <= turn; i++) {
@@ -146,15 +148,15 @@ function exportCSV() {
     link.click();
     window.URL.revokeObjectURL(url);
     link.parentNode.removeChild(link);
+    return csvData;
 }
 
 var parDiv = document.getElementById("parent");
 parDiv.append(createChatRow("System", "あなたが挨拶を入力すると対話がスタートします"));
 parDiv.scrollTo(0, parDiv.scrollHeight);
 
-document.getElementById("interact").addEventListener("submit", function (event) {
-    event.preventDefault()
-
+function next() {
+        
     if (phase == 0) {
         ntex = document.getElementById("userIn").value;
         var ncontext = {
@@ -162,7 +164,7 @@ document.getElementById("interact").addEventListener("submit", function (event) 
             "Uttr": ntex
         };
         context.push(ncontext);
-
+        
         document.getElementById('userIn').value = "";
         var parDiv = document.getElementById("parent");
         parDiv.append(createChatRow("You", ntex));
@@ -170,7 +172,7 @@ document.getElementById("interact").addEventListener("submit", function (event) 
         turn += 1;
         var send_info = { "data": context, "ID": ID, "count": 11 - turn };
         document.getElementById("interact").style.display = "none";
-        fetch('/interact', {
+        fetch('/interact_one_res', {
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -192,12 +194,8 @@ document.getElementById("interact").addEventListener("submit", function (event) 
             };
         })
     }
-});
-
-
-document.getElementById("interact").addEventListener("submit", function (event) {
-    event.preventDefault();
-    if (phase == 1) {
+    
+    else if (phase == 1) {
         phase = 2;
         apperAllFrom();
         console.log("EVAL");
@@ -209,13 +207,27 @@ document.getElementById("interact").addEventListener("submit", function (event) 
             behavior: 'smooth'
         });
     }
-});
-
-document.getElementById("interact").addEventListener("submit", function (event) {
-    event.preventDefault();
-    if (phase == 2) {
+    else if (phase == 2) {
         if (isEvaluationDone()) {
-            exportCSV();
+            csvData = exportCSV();
+            send_info = {"data": csvData, "id": id}
+            fetch('/dialog_end', {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                method: 'POST',
+                body: JSON.stringify(send_info)
+            })
+            
+            send_info = {"UserName": id, "PageNum": 0}
+            fetch('http://ec2-13-231-145-226.ap-northeast-1.compute.amazonaws.com/dialog_end', {
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                method: 'POST',
+                mode: 'cors',
+                body: JSON.stringify(send_info)
+            })
         }
     }
-});
+}

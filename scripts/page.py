@@ -34,10 +34,11 @@ WEB_HTML = """<html>
                       <div class="field is-grouped">
                         <p class="control is-expanded">
                           <input class="input" type="text" id="userIn" placeholder="メッセージを入力してください" required minlength="5" maxlength="120">
+                          <input type="text" name="dummy" style="display:none;">
                           <span class="validity"></span>
                         </p>
                         <p class="control">
-                          <button id="respond" type="submit" class="button has-text-white-ter has-background-grey-dark">
+                          <button id="respond" type="button" onclick="next();" class="button has-text-white-ter has-background-grey-dark">
                             入力
                           </button>
                         </p>

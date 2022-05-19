@@ -467,9 +467,24 @@ class Favot(object):
         return
 
     def make_input(self, newspk, newutt, mode="normal", max_contexts=-1, id=None, idprefix="a"):
+         line = ""
 
-        return newutt[-512:]
+        contexts = newutt
+        print(contexts, flush=True)
+        SP = {"U": SPK2, "S": SPK1, "u": SPK2, "s": SPK1}
+        contexts = newutt["data"]
 
+        line = [SP[_context["Talker"]] +_context["Uttr"]
+            for _context in contexts]
+
+        res = SEPARATOR.join(line[-4:])
+        self.question_time = False
+                    
+        res = res[-512:]
+
+        print(res, flush=True)
+        return res
+        
     def reset(self):
         self.contexts = []
         self.sent_contexts = []

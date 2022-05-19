@@ -479,8 +479,8 @@ class Favot(object):
 
         res = SEPARATOR.join(line[-4:])
         self.question_time = False
-                    
-        res = res[-512:]
+              
+        res = "雑談[SEP]"+res[-512:]
 
         print(res, flush=True)
         return res

@@ -19,7 +19,7 @@ from fairseq import options
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 from model_init import FavotModel,  add_local_args
-from model import Favot
+from model_interact import InteractFavot as Favot
 from page import *
 
 

@@ -467,7 +467,7 @@ class Favot(object):
         return
 
     def make_input(self, newspk, newutt, mode="normal", max_contexts=-1, id=None, idprefix="a"):
-         line = ""
+        line = ""
 
         contexts = newutt
         print(contexts, flush=True)

@@ -28,6 +28,9 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 from page import *
 
+
+from likelihood import clc_saya_likelihood
+
 SEPARATOR = "[SEP]"
 SPK1 = "[SPK1]"
 SPK2 = "[SPK2]"
@@ -61,6 +64,7 @@ class Favot(object):
         self.debug = False
         self.delimiter = "．。 　?？!！♪☆★"
         self.sent_splitter = re.compile(".*?[{}]".format(self.delimiter), re.DOTALL)
+        self.question_time = False
         self.alphs = "abcdefghijklmnopqrstuvwyz"
 
         self.make_input_func = self.make_input
@@ -181,7 +185,7 @@ class Favot(object):
         ret_utt, ret_score = ret_scores.most_common(1)[0]
         print(ret_score, ret_utt)
 
-        self.logger.info(str(ret_scores.most_common(5)))
+        self.logger.info(str(ret_scores.most_common(10)))
         return ret_scores, ret_debug
 
     def _execute(self, uttr, **kwargs):
@@ -196,10 +200,7 @@ class Favot(object):
         inputs = [
             self.make_input_func(SPK2, uttr, mode=mode),
         ]
-
         self.logger.info("input_seq: " + str(inputs))
-        if self.debug:
-            ret_debug.append("input_seq: " + str(inputs))
         results = []
 
         args = self.fm.cfg
@@ -226,8 +227,9 @@ class Favot(object):
                 },
                 #"target": zero_samples[i]["net_input"]["src_tokens"],
             }
-            translate_start_time = time.time()
-            translations = task.inference_step(self.fm.generator, self.fm.models, sample, constraints=constraints)
+            translate_start_time = time.time()            
+
+            translations = task.inference_step(self.fm.generator, self.fm.models, sample, constraints=constraints, question_mode=self.question_time)
             translate_time = time.time() - translate_start_time
             self.fm.total_translate_time += translate_time
             list_constraints = [[] for _ in range(bsz)]
@@ -284,12 +286,12 @@ class Favot(object):
                     else:
                         score = score - 100000
                 # original hypothesis (after tokenization and BPE)
-                self.logger.info("system_utt_cands: " + 'H-{}\t{}\t{}'.format(id_, score, hypo_str))
-                self.logger.info("system_utt_cands: " + 'D-{}\t{}\t{}'.format(id_, score, detok_hypo_str))
-                if self.debug:
+                # self.logger.info("system_utt_cands: " + 'H-{}\t{}\t{}'.format(id_, score, hypo_str))
+                # self.logger.info("system_utt_cands: " + 'D-{}\t{}\t{}'.format(id_, score, detok_hypo_str))
+                # if self.debug:
                     #ll='H-{}\t{}\t{}'.format(id_, score, hypo_str)+"\n"+'D-{}\t{}\t{}'.format(id_, score, detok_hypo_str)
                     #ret_debug.append(ll)
-                    ret_debug.append("system_utt_cands: " + 'D-{}\t{}\t{}'.format(id_, score, detok_hypo_str))
+                    # ret_debug.append("system_utt_cands: " + 'D-{}\t{}\t{}'.format(id_, score, detok_hypo_str))
 
                 _scores = hypo['positional_scores'].div_(math.log(2)).tolist()
                 _contexts = self.contexts
@@ -331,6 +333,15 @@ class Favot(object):
                         score -= 2
                         if "そろそろ" in detok_hypo_str:
                             score -= 1000000
+
+                # score = clc_saya_likelihood(detok_hypo_str)
+
+                # if "ありがとう" in detok_hypo_str:
+                #     score -= 1000000
+                
+                # if not que in detok_hypo_str:
+                #     score -= 1000000
+
                 # if self.args.rep_pen != 0:
                 #     repeat_num = self.num_repeat_topic_word(detok_hypo_str, mode=mode, contexts=_contexts)
                 #     score -= repeat_num * self.args.rep_pen
@@ -464,17 +475,13 @@ class Favot(object):
         line = ""
 
         contexts = newutt["data"]
-        turn = newutt["count"]
-        que = newutt["question"]
-        print(contexts, flush=True)
 
         SP = {"U": SPK2, "S": SPK1, "u": SPK2, "s": SPK1}
         line = [SP[_context["Talker"][0]] +_context["Uttr"]
             for _context in contexts]
         # line += [f" ターン {len(contexts)+1:02}"]
         
-        q = f"{turn*2 - 1} 質問: {que}[SEP]"
-        res = q + SEPARATOR.join(line)[-512+len(q):]
+        res = SEPARATOR.join(line)
         
         print(res, flush=True)
         print(res[-512:], flush=True)

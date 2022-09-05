@@ -7,7 +7,6 @@ python-telegram-bot v13.1
 
 """
 #from fairseq_cli import interactive as intr
-from fairseq_cli.interactive import make_batches
 import sys
 import ast
 import torch
@@ -19,6 +18,9 @@ import collections
 import json
 import random
 
+sys.path.append("/home/ubuntu/fairseq")
+
+from fairseq_cli.interactive import make_batches
 import numpy as np
 import copy
 from datetime import datetime
@@ -58,8 +60,6 @@ def test(logger, parser, args, cfg):
 
     fm = FavotModel(args, logger=logger)
     favot = Favot(args, fm, logger=logger, parser=parser)
-    question_d = defaultdict(lambda: "")
-    quesiton_l = ["結婚生活は楽しいですか?"]
 
     class MyHTTPRequestHandler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -111,12 +111,11 @@ def test(logger, parser, args, cfg):
                     body = json.loads(content)
 
                     print('body = {}'.format(body))
-                    body["count"] = 5 if not "count" in body else body["count"]
-                    body["question"] = "結婚生活は楽しいですか?" if not "question" in body else body["question"]
-
+                    
                     ret = favot.execute(body)
                     ret, ret_debug = ret
-                    ret_ = [i[0] for i in ret.most_common(10)[:10]]
+                    ret_ = [ret.most_common(10)[i][0] for i in range(10)]
+                    # ret_ = [i[0] for i in ret.most_common(10)[:10]]
                     if ret is not None:
                         logger.info("sys_uttr: " + ret_[0])
                         print("\n".join(ret_debug))
@@ -142,16 +141,6 @@ def test(logger, parser, args, cfg):
                     body = json.loads(content)
 
                     print('body = {}'.format(body))
-                    body["count"] = 5 if not "count" in body else body["count"]
-                    ID = "0"
-                    if "ID" in body:
-                        ID = body['ID']
-                    if not question_d[ID]:
-                        question_d[ID] = quesiton_l[random.randrange(len(quesiton_l))]
-                    body["question"] = question_d[ID] if not "question" in body else body["question"]
-                    
-                    if "ID" in body:
-                        print(f"対話,{body['ID']},{body['question']},{body['data']}", flush=True)
 
                     ret = favot.execute(body)
                     ret, ret_debug = ret

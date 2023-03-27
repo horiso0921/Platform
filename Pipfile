@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = {extras = ["all"], version = "*"}
+uvicorn = {extras = ["standard"], version = "*"}
+pydantic = "*"
+flower = "*"
+celery = "*"
+sdv = "*"
+Redis = "*"
+
+[dev-packages]
+pytest = "*"
+tox = "*"
+flake8 = "*"
+autopep8 = "*"
+isort = "*"
+mypy = "*"
+yapf = "*"
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+start = "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

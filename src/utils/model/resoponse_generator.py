@@ -1,36 +1,17 @@
-# coding: utf-8
-"""
-対応version
-fairseq v0.10.2
-python-telegram-bot v13.1
-全体を依存少なくリライト
-
-"""
-# from fairseq_cli import interactive as intr
 from fairseq_cli.interactive import make_batches
-import sys
-import ast
-import torch
 import time
 import math
 import re
 import difflib
 import collections
 import time
-import json
-import urllib.request
 
-import numpy as np
 import copy
-from datetime import datetime
-from logging import getLogger, StreamHandler, FileHandler, Formatter, DEBUG, WARN, INFO
 
-from fairseq import checkpoint_utils, distributed_utils, options, tasks, utils
-from fairseq.data import encoders
-from fairseq.token_generation_constraints import pack_constraints, unpack_constraints
+from fairseq import utils
+from fairseq.token_generation_constraints import unpack_constraints
 from fairseq_cli.generate import get_symbols_to_strip_from_output
 
-from fairseq.dataclass.configs import FairseqConfig
 from fairseq.dataclass.utils import convert_namespace_to_omegaconf
 
 SEPARATOR = "[SEP]"
@@ -38,7 +19,24 @@ SPK1 = "[SPK1]"
 SPK2 = "[SPK2]"
 hiragana = re.compile('[\u3041-\u309F，、．。？！\?\!]+')
 
-class Generator(object):
+def add_local_args(parser):
+    parser.add_argument('--show-nbest', default=3,
+                        type=int, help='# visible candidates')
+    parser.add_argument(
+        '--starting-phrase', default="こんにちは。よろしくお願いします。", type=str, help='starting phrase')
+    parser.add_argument('--quemode', default="off",
+                        type=str, help='question mode')
+
+    parser.add_argument('--que', default="あなたの宗教は何ですか？",
+                        type=str, help='question mode')
+    parser.add_argument('--turn', default=9, type=int, help='question mode')
+    parser.add_argument('--savepath', default="log", type=str, help='question mode')
+    parser.add_argument('--basepath', default="/data/group1/z44384r/finetuning-nttdialoguemodel/model/base/empdial50k-flat_1.6B_19jce27w_3.86.pt", type=str, help='base model path')
+    parser.add_argument('--saya', default=False, type=bool, help='Is saya model')
+    parser.add_argument('--train-turn', default=5, type=int, help='学習時のターン数')
+    return parser
+
+class Favot(object):
 
     def encode_fn(self, x):
         if self.fm.tokenizer is not None:
